@@ -1,3 +1,5 @@
+[![HitCount](http://hits.dwyl.io/algore87/lotto-mailer.svg)](http://hits.dwyl.io/algore87/lotto-mailer)
+
 # Lotto-Mailer
 > lotto results send per mail via sendgrid and deployed with heroku
 
