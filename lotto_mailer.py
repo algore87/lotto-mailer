@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 from requests import get
 import re, sendgrid, os
 from sendgrid.helpers.mail import *
-
+import datetime
+datetime.datetime.timetz
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [2, 3, 7, 10, 28, 37],
@@ -20,7 +21,6 @@ my_numbers = [  [4, 9, 17, 26, 30, 41],
                 [4, 12, 17, 25, 33, 37],
                 [4, 9, 22, 27, 31, 41]]
 """
-
 def get_file_contents(filename):
     """ Given a filename,
         return the contents of that file
@@ -169,19 +169,30 @@ def get_html_output_str():
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
     return output_str
 
-
+def runOnSchedule():
+    if datetime.date.today().isoweekday() == 1  \
+    and datetime.datetime.utcnow().hour == 9: # run only on monday between 9 and 10 am utc
+        return True
+    else:
+        return False
+        
 # sendgrid stuff
+to_mail_list = ["alexschott87@gmail.com", 
+                "scotty0655@gmail.com"]
+def mailto(recipients):
+    sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+    from_email = Email("alexschott87@gmail.com")
+    subject = "Lottozahlen: " + lotto_dict["date"]
+    content = Content("text/html", get_html_output_str())
+    for recipient in recipients: # mail to all recipients
+        mail = Mail(from_email, subject, Email(recipient), content)
+        response = sg.client.mail.send.post(request_body=mail.get())
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
 
-#print("Your API key is: {}".format(os.environ.get('SENDGRID_API_KEY')))
-sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
-from_email = Email("alex-schott@gmx.de")
-to_email = Email("alexschott87@gmail.com")
-subject = "Lottozahlen: " + lotto_dict["date"]
-content = Content("text/html", get_html_output_str())
-mail = Mail(from_email, subject, to_email, content)
-response = sg.client.mail.send.post(request_body=mail.get())
-print(response.status_code)
-print(response.body)
-print(response.headers)
+if runOnSchedule():
+    #print("Your API key is: {}".format(os.environ.get('SENDGRID_API_KEY')))
+    mailto(to_mail_list)
 
 #print(get_html_output_str())
