@@ -7,6 +7,8 @@ from sendgrid.helpers.mail import *
 import datetime
 datetime.datetime.timetz
 
+dev_mode = False
+
 my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [2, 3, 7, 10, 28, 37],
                 [1, 5, 7, 12, 14, 20],
@@ -80,15 +82,20 @@ lotto_dict["super_nr"] = lotto_dict["numbers"].pop()
 Quotes
 """
 quotes_list = []
-for row in range(1, 10):
-    table_entries = lotto_6_49_quote_table_entries_soup[row].find_all('td')
-    quote_dict = {}
-    quote_dict["Klasse"] = int(table_entries[0].text)
-    quote_dict["Anzahl Richtige"] = table_entries[1].text
-    quote_dict["Gewinne"] = int(table_entries[2].text[:-2].replace('.',''))
-    quote_dict["Quoten"] = string_to_float(table_entries[3].text)
-    quotes_list.append(quote_dict)
-# print(quotes_list)
+has_quote = True
+game_amount = lotto_6_49_quotes_soup.find('div', class_="GameAmount").text
+if game_amount == "Spieleinsatz: wird ermittelt": # no quote
+    # game_amount = string_to_float(game_amount)
+    has_quote = False
+else: # get quote
+    for row in range(1, 10):
+        table_entries = lotto_6_49_quote_table_entries_soup[row].find_all('td')
+        quote_dict = {}
+        quote_dict["Klasse"] = int(table_entries[0].text)
+        quote_dict["Anzahl Richtige"] = table_entries[1].text
+        quote_dict["Gewinne"] = int(table_entries[2].text[:-2].replace('.',''))
+        quote_dict["Quoten"] = string_to_float(table_entries[3].text)
+        quotes_list.append(quote_dict)
 
 def get_quote_with_hit(hit): # hit: Str(nr) or Str("nrSZ")
     quote_with_sz = 0.0
@@ -102,9 +109,7 @@ def get_quote_with_hit(hit): # hit: Str(nr) or Str("nrSZ")
     return (quote_without_sz, quote_with_sz)
 
 # overall money pot
-game_amount = lotto_6_49_quotes_soup.find('div', class_="GameAmount").text
-if game_amount.startswith("Spieleinsatz"):
-    game_amount = string_to_float(game_amount)
+
 #print(game_amount)
 
 
@@ -136,12 +141,16 @@ def get_plain_output_str():
             win_without_sz += quote_tuple[0]
             win_with_sz += quote_tuple[1]
             output_str += " Treffer: " + str(hit_set)
-            if hits >= 2:
+            if hits >= 2 and has_quote:
                 output_str += " Gewinn (ohne,mit SZ): {:.2f} €, {:.2f} €".format(*quote_tuple)
         output_str += "\n"
-    output_str += "Gesamtgewinn (ohne, mit SZ): {:.2f} €, {:.2f} €".format(win_without_sz, win_with_sz)
+    if has_quote:
+        output_str += "Gesamtgewinn (ohne, mit SZ): {:.2f} €, {:.2f} €".format(win_without_sz, win_with_sz)
+    else:
+        output_str += "Noch keine Quote vorhanden"
     return output_str
 print(get_plain_output_str())
+print(datetime.datetime.utcnow())
 
 def get_html_output_str():
     output_str = welcome_msg + "<br><br>"
@@ -162,10 +171,13 @@ def get_html_output_str():
             win_without_sz += quote_tuple[0]
             win_with_sz += quote_tuple[1]
             output_str += " ---> " + str(hits) + " Treffer"
-            if hits >= 2:
+            if hits >= 2 and has_quote:
                 output_str += ": <i>{:.2f} €, {:.2f} €</i>".format(*quote_tuple)
         output_str += "<br>"
-    output_str += "<br><u>Gesamtgewinn (ohne, mit SZ)</u>: <b>{:.2f} €</b>, <b>{:.2f} €</b><br>".format(win_without_sz, win_with_sz)
+    if has_quote:
+        output_str += "<br><u>Gesamtgewinn (ohne, mit SZ)</u>: <b>{:.2f} €</b>, <b>{:.2f} €</b><br>".format(win_without_sz, win_with_sz)
+    else:
+        output_str += "<br>noch keine Quote vorhanden.<br>"
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
     return output_str
 
@@ -177,8 +189,12 @@ def runOnSchedule():
         return False
         
 # sendgrid stuff
-to_mail_list = ["alexschott87@gmail.com", 
-                "scotty0655@gmail.com"]
+if dev_mode:
+    to_mail_list = ["alexschott87@gmail.com"]
+else:
+    to_mail_list = ["alexschott87@gmail.com", 
+                    "scotty0655@gmail.com"]
+
 def mailto(recipients):
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
     from_email = Email("alexschott87@gmail.com")
@@ -191,7 +207,7 @@ def mailto(recipients):
         print(response.body)
         print(response.headers)
 
-if runOnSchedule():
+if runOnSchedule() or dev_mode:
     #print("Your API key is: {}".format(os.environ.get('SENDGRID_API_KEY')))
     mailto(to_mail_list)
 
