@@ -6,7 +6,10 @@ import re, sendgrid, os
 from sendgrid.helpers.mail import *
 import datetime
 datetime.datetime.timetz
-
+"""
+TODO: add mLab MongoDB (Heroku Add-on) to track results
+TODO: add html/css to make the output mail look pretty
+"""
 dev_mode = False
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],

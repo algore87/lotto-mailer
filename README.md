@@ -74,6 +74,7 @@ Add `PYTHONPATH` - `/app/.heroku/python` to your Config Vars in Settings.
 * clean up code
 * make it more efficient
 * add html and css to send really nice looking mails
+* add db with toCsv feature to track results
 
 
 ## License
