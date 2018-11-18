@@ -150,7 +150,7 @@ def get_plain_output_str():
         output_str += "Noch keine Quote vorhanden"
     return output_str
 print(get_plain_output_str())
-print(datetime.datetime.utcnow())
+
 
 def get_html_output_str():
     output_str = welcome_msg + "<br><br>"
@@ -180,7 +180,12 @@ def get_html_output_str():
         output_str += "<br>noch keine Quote vorhanden.<br>"
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
     return output_str
+if dev_mode:
+    print(get_html_output_str())
 
+
+print(datetime.datetime.utcnow())
+print("Weekday: {}\nUTC Hour: {}".format(datetime.date.today().isoweekday(), datetime.datetime.utcnow().hour))
 def runOnSchedule():
     if datetime.date.today().isoweekday() == 1  \
     and datetime.datetime.utcnow().hour == 9: # run only on monday between 9 and 10 am utc
@@ -211,4 +216,3 @@ if runOnSchedule() or dev_mode:
     #print("Your API key is: {}".format(os.environ.get('SENDGRID_API_KEY')))
     mailto(to_mail_list)
 
-#print(get_html_output_str())
