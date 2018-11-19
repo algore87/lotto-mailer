@@ -136,7 +136,7 @@ def get_plain_output_str():
     + "Eigene Zahlen + Treffer: " + "\n"
     win_without_sz = 0.0
     win_with_sz = 0.0
-    for numbers in my_numbers:
+    for numbers in my_numbers.copy():
         output_str += str(numbers)
         hit_set = set(numbers) & set(lotto_dict["numbers"])
         hits = len(hit_set)
@@ -156,18 +156,20 @@ def get_plain_output_str():
 print(get_plain_output_str())
 
 
-def get_html_output_str():
+def get_html_output_str(): # BUG
     output_str = welcome_msg + "<br><br>"
     output_str += "<u>" + lotto_dict["date"] + "</u><br>" \
     + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " + str(lotto_dict["super_nr"]) + "<br><br>" \
     + "<u>Ergebnis mit ggf. <i>Gewinn (ohne, mit SZ)</i></u>: " + "<br>"
     win_without_sz = 0.0
     win_with_sz = 0.0
-    for numbers in my_numbers:
+    for numbers in my_numbers: # BUG: Numbers changes even if my_numbers.copy() [[]<-- referenziert,[]]
         hit_set = set(numbers) & set(lotto_dict["numbers"])
+        #print(numbers)
+        #print(hit_set)
         for i in range(len(numbers)):
             if numbers[i] in lotto_dict["numbers"]:
-                numbers[i] = "<b>" + str(numbers[i]) + "</b>"
+                numbers[i] = "<b>" + str(numbers[i]) + "</b>" # changes my_numbers[[numbers*][][]]
         output_str += str(numbers)[1:-1].replace("'","")
         hits = len(hit_set)
         if hits:
@@ -184,8 +186,9 @@ def get_html_output_str():
         output_str += "<br>noch keine Quote vorhanden.<br>"
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
     return output_str
+html_output_str = get_html_output_str() # BUG: second get_html_output_str() doesn't show hits (cause numbers changed!)
 if dev_mode:
-    print(get_html_output_str())
+    print(html_output_str)
 
 
 print(datetime.datetime.utcnow())
@@ -208,7 +211,7 @@ def mailto(recipients):
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
     from_email = Email("alexschott87@gmail.com")
     subject = "Lottozahlen: " + lotto_dict["date"]
-    content = Content("text/html", get_html_output_str())
+    content = Content("text/html", html_output_str)
     for recipient in recipients: # mail to all recipients
         mail = Mail(from_email, subject, Email(recipient), content)
         response = sg.client.mail.send.post(request_body=mail.get())
