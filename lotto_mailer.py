@@ -11,7 +11,7 @@ TODO: sendgrid webhook to receive data from recipient (get superzahl)
 TODO: add mLab MongoDB (Heroku Add-on) to track results
 TODO: add html/css to make the output mail look pretty
 """
-dev_mode = True
+dev_mode = False or os.environ.get('DEBUG') # change debug state in heroku itself
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [2, 3, 7, 10, 28, 37],
