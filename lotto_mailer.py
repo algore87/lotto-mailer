@@ -11,7 +11,7 @@ TODO: sendgrid webhook to receive data from recipient (get superzahl)
 TODO: add mLab MongoDB (Heroku Add-on) to track results
 TODO: add html/css to make the output mail look pretty
 """
-dev_mode = False
+dev_mode = True
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [2, 3, 7, 10, 28, 37],
@@ -41,8 +41,7 @@ def get_file_contents(filename):
         
 
 ### Initialisation
-#key = get_file_contents("sendgrid_api_key")
-key = None
+key = get_file_contents("sendgrid_api_key")
 if key != None:
     os.environ['SENDGRID_API_KEY'] = key
 
