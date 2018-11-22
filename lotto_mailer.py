@@ -14,7 +14,7 @@ TODO: add html/css to make the output mail look pretty
 SHELL MONGO Command:
 db.lotto_numbers.createIndex({date: "text"})
 """
-dev_mode = False or os.environ.get('DEBUG') # change debug state in heroku itself
+dev_mode = False or int(os.environ.get('DEBUG')) # change debug state in heroku itself
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [2, 3, 7, 10, 28, 37],
@@ -172,7 +172,7 @@ def linebreak_adder_from_plain_to_html(s):
 
 def get_plain_output_str():
     output_str = ""
-    output_str += lotto_dict["date"] + "\n" \
+    output_str += lotto_date_soup.text + "\n" \
     + "Gewinnzahlen: " + str(lotto_dict["numbers"]) + " SZ: " + str(lotto_dict["super_nr"]) + "\n" \
     + "Eigene Zahlen + Treffer: " + "\n"
     win_without_sz = 0.0
@@ -199,7 +199,7 @@ print(get_plain_output_str())
 
 def get_html_output_str(): # BUG
     output_str = welcome_msg + "<br><br>"
-    output_str += "<u>" + lotto_dict["date"] + "</u><br>" \
+    output_str += "<u>" + lotto_date_soup.text + "</u><br>" \
     + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " + str(lotto_dict["super_nr"]) + "<br><br>" \
     + "<u>Ergebnis mit ggf. <i>Gewinn (ohne, mit SZ)</i></u>: " + "<br>"
     win_without_sz = 0.0
@@ -251,7 +251,7 @@ else:
 def mailto(recipients):
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
     from_email = Email("alexschott87@gmail.com")
-    subject = "Lottozahlen: " + lotto_dict["date"]
+    subject = "Lottozahlen: " + lotto_date_soup.text
     content = Content("text/html", html_output_str)
     for recipient in recipients: # mail to all recipients
         mail = Mail(from_email, subject, Email(recipient), content)
