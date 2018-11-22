@@ -46,7 +46,8 @@ def get_file_contents(filename):
 db_user_colon_pw = get_file_contents("heroku_mlab_mongodb")
 if db_user_colon_pw != None:
     os.environ['MLAB_MONGO_LOGIN'] = db_user_colon_pw
-
+else:
+    db_user_colon_pw = os.environ.get('MLAB_MONGO_LOGIN')
 db_name = 'heroku_l8nz6hj9'
 client = MongoClient('mongodb://' + db_user_colon_pw + '@ds211504.mlab.com:11504/' + db_name)
 db = client[db_name] # db
@@ -55,6 +56,7 @@ db = client[db_name] # db
 key = get_file_contents("sendgrid_api_key")
 if key != None:
     os.environ['SENDGRID_API_KEY'] = key
+
 
 # parser stuff
 lotto_url = "https://www.lotto.de/lotto-6aus49/lottozahlen"

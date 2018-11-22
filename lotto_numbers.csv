@@ -1,2 +1,64 @@
 date,super_nr,numbers
 21.11.2018,7,"[18,24,29,30,42,47]"
+{
+    "_id": {
+        "$date": "2018-11-21T00:00:00.000Z"
+    },
+    "date": "21.11.2018",
+    "quotes_list": [
+        {
+            "Klasse": 1,
+            "Anzahl Richtige": "6 Richtige + SZ",
+            "Gewinne": 0,
+            "Quoten": 0
+        },
+        {
+            "Klasse": 2,
+            "Anzahl Richtige": "6 Richtige",
+            "Gewinne": 0,
+            "Quoten": 0
+        },
+        {
+            "Klasse": 3,
+            "Anzahl Richtige": "5 Richtige + SZ",
+            "Gewinne": 29,
+            "Quoten": 13365.3
+        },
+        {
+            "Klasse": 4,
+            "Anzahl Richtige": "5 Richtige",
+            "Gewinne": 206,
+            "Quoten": 5644.5
+        },
+        {
+            "Klasse": 5,
+            "Anzahl Richtige": "4 Richtige + SZ",
+            "Gewinne": 2052,
+            "Quoten": 188.8
+        },
+        {
+            "Klasse": 6,
+            "Anzahl Richtige": "4 Richtige",
+            "Gewinne": 14158,
+            "Quoten": 54.7
+        },
+        {
+            "Klasse": 7,
+            "Anzahl Richtige": "3 Richtige + SZ",
+            "Gewinne": 40843,
+            "Quoten": 18.9
+        },
+        {
+            "Klasse": 8,
+            "Anzahl Richtige": "3 Richtige",
+            "Gewinne": 291202,
+            "Quoten": 11.9
+        },
+        {
+            "Klasse": 9,
+            "Anzahl Richtige": "2 Richtige + SZ",
+            "Gewinne": 322451,
+            "Quoten": 5
+        }
+    ]
+}
