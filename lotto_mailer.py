@@ -8,12 +8,44 @@ import datetime
 datetime.datetime.timetz
 from pymongo import MongoClient # mongodb
 """
+TODO: add super_nr as argument and change output (only if SZ hit with Treffer{},{} + SZ)
+TODO: clean up code
 TODO: sendgrid webhook to receive data from recipient (get superzahl)
 TODO: add mLab MongoDB (Heroku Add-on) to track results
 TODO: add html/css to make the output mail look pretty
-SHELL MONGO Command:
-db.lotto_numbers.createIndex({date: "text"})
+
+Zusätzliche Spezifikationen:
+Allgemeines:
+-> Imports evtl. From Datetime Import Datetime # um datetime.datetime zu fixen
+
+Programm:
+-> Füge Superzahl als Argument hinzu
+    - python lotto_mailer.py 8 # setzt Superzahl auf 8 usage: ./python_mailer <sz>
+    - superzahl nur zwischen [0-9]
+    - argument hat priorität
+
+Datenbank:
+-> Change lotto_quotes collection
+    - add [day: "Mittwoch | Samstag"] # damit nach Mittwoch / Samstage sortiert werden kann
+    - add [win: 73.00] # um den Gewinn zu verfolgen (Gewinn mit / ohne SZ)
+    - add [pot: 2948591.55] # Pot Gesamt-Preis
+
+Ausgabe:
+-> Separation of Concerns
+    - Output sollte nur Output sein, evtl. mit Polymorphie, für Console / Mail je unterschiedlicher Aufruf
+    - D.h. auch Berechnung und Ergebnisse vom Output trennen.
+    Ideen:
+        - Evtl. Ohne Sz / Sz entfernen, wenn SZ bei daddy fix 7 ist
+        - Oder Ohne Sz / Sz drin lassen, aber das getroffene FETT
+
+Heroku Scheduler:
+-> Führe Skript Mi, Fr, Sa, Mo aus
+    - Mi für neueste Lottozahlen in Datenbank am Mittwoch
+    - Fr für Quoten vom Mittwoch
+    - Sa für neueste Lottozahlen in Datenbank am Samstag
+    - Mo für Quoten vom Samstag
 """
+
 dev_mode = False or int(os.environ.get('DEBUG')) # change debug state in heroku itself
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
@@ -64,11 +96,20 @@ response = get(lotto_url)
 response.encoding = "utf-8"
 
 def get_date(s):
+    """
+    Ziehung vom Mittwoch, 01.01.2018... -> str("01.01.2018")
+    """
     reobj = re.search('[0-9]{2}.[0-9]{2}.[0-9]{4}',s)
     if reobj != None:
         return reobj.group(0)
     else:
         return None
+
+def get_day_str_from_date_str(s):
+    """
+    01.01.2018 -> 0-6 -> "Montag | Dienstag | Mittwoch | Donnerstag | Freitag | Samstag | Sonntag
+    """
+    pass
 
 def string_to_float(s):
     """
@@ -98,7 +139,6 @@ Winning Numbers
 """
 lotto_dict = {"numbers": []} # {"date": "21.11.2018", "numbers":[18, 24, 29, 30, 42, 47], "super_nr": 7}
 date = get_date(lotto_date_soup.text)
-print(lotto_date_soup.text)
 if date:
     lotto_dict["_id"] = datetime.datetime.strptime(date, "%d.%m.%Y")
     lotto_dict["date"] = date
