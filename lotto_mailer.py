@@ -6,10 +6,13 @@ import re, sendgrid, os
 from sendgrid.helpers.mail import *
 import datetime
 datetime.datetime.timetz
+from pymongo import MongoClient # mongodb
 """
 TODO: sendgrid webhook to receive data from recipient (get superzahl)
 TODO: add mLab MongoDB (Heroku Add-on) to track results
 TODO: add html/css to make the output mail look pretty
+SHELL MONGO Command:
+db.lotto_numbers.createIndex({date: "text"})
 """
 dev_mode = False or os.environ.get('DEBUG') # change debug state in heroku itself
 
@@ -38,9 +41,17 @@ def get_file_contents(filename):
             return f.read().strip()
     except FileNotFoundError:
         print("'{}' file not found".format(filename))
-        
+### Initialisation   
+# Mongo DB
+db_user_colon_pw = get_file_contents("heroku_mlab_mongodb")
+if db_user_colon_pw != None:
+    os.environ['MLAB_MONGO_LOGIN'] = db_user_colon_pw
 
-### Initialisation
+db_name = 'heroku_l8nz6hj9'
+client = MongoClient('mongodb://' + db_user_colon_pw + '@ds211504.mlab.com:11504/' + db_name)
+db = client[db_name] # db
+
+# Sendgrid
 key = get_file_contents("sendgrid_api_key")
 if key != None:
     os.environ['SENDGRID_API_KEY'] = key
@@ -49,6 +60,13 @@ if key != None:
 lotto_url = "https://www.lotto.de/lotto-6aus49/lottozahlen"
 response = get(lotto_url)
 response.encoding = "utf-8"
+
+def get_date(s):
+    reobj = re.search('[0-9]{2}.[0-9]{2}.[0-9]{4}',s)
+    if reobj != None:
+        return reobj.group(0)
+    else:
+        return None
 
 def string_to_float(s):
     """
@@ -76,11 +94,23 @@ lotto_6_49_quote_table_entries_soup = lotto_soup.find_all('tr', class_="OddsTabl
 """
 Winning Numbers
 """
-lotto_dict = {"date": "", "numbers":[]}
-lotto_dict["date"] = lotto_date_soup.text
-for item in lotto_winning_numbers_soup:
-    lotto_dict["numbers"].append(int(item.text))
-lotto_dict["super_nr"] = lotto_dict["numbers"].pop()
+lotto_dict = {"numbers": []} # {"date": "21.11.2018", "numbers":[18, 24, 29, 30, 42, 47], "super_nr": 7}
+date = get_date(lotto_date_soup.text)
+print(lotto_date_soup.text)
+if date:
+    lotto_dict["_id"] = datetime.datetime.strptime(date, "%d.%m.%Y")
+    lotto_dict["date"] = date
+    for item in lotto_winning_numbers_soup:
+        lotto_dict["numbers"].append(int(item.text))
+    lotto_dict["super_nr"] = lotto_dict["numbers"].pop()
+else:
+    raise ValueError
+
+try:
+    db.lotto_numbers.insert_one(lotto_dict)
+except Exception as e:
+    print(e)
+
 
 """
 Quotes
@@ -100,6 +130,15 @@ else: # get quote
         quote_dict["Gewinne"] = int(table_entries[2].text[:-2].replace('.',''))
         quote_dict["Quoten"] = string_to_float(table_entries[3].text)
         quotes_list.append(quote_dict)
+    
+    lotto_quote = {}
+    lotto_quote["_id"] = datetime.datetime.strptime(date, "%d.%m.%Y")
+    lotto_quote["date"] = date
+    lotto_quote["quotes_list"] = quotes_list
+    try:
+        db.lotto_quotes.insert_one(lotto_quote)
+    except Exception as e:
+        print(e)
 
 def get_quote_with_hit(hit): # hit: Str(nr) or Str("nrSZ")
     quote_with_sz = 0.0
