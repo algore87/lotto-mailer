@@ -245,8 +245,7 @@ def runOnSchedule():
 if dev_mode:
     to_mail_list = ["alexschott87@gmail.com"]
 else:
-    to_mail_list = ["alexschott87@gmail.com", 
-                    "scotty0655@gmail.com"]
+    to_mail_list = ["scotty0655@gmail.com"]
 
 def mailto(recipients):
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
