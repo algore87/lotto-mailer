@@ -8,12 +8,44 @@ import datetime
 datetime.datetime.timetz
 from pymongo import MongoClient # mongodb
 """
+TODO: add super_nr as argument and change output (only if SZ hit with Treffer{},{} + SZ)
+TODO: clean up code
 TODO: sendgrid webhook to receive data from recipient (get superzahl)
 TODO: add mLab MongoDB (Heroku Add-on) to track results
 TODO: add html/css to make the output mail look pretty
-SHELL MONGO Command:
-db.lotto_numbers.createIndex({date: "text"})
+
+Zusätzliche Spezifikationen:
+Allgemeines:
+-> Imports evtl. From Datetime Import Datetime # um datetime.datetime zu fixen
+
+Programm:
+-> Füge Superzahl als Argument hinzu
+    - python lotto_mailer.py 8 # setzt Superzahl auf 8 usage: ./python_mailer <sz>
+    - superzahl nur zwischen [0-9]
+    - argument hat priorität
+
+Datenbank:
+-> Change lotto_quotes collection
+    - add [day: "Mittwoch | Samstag"] # damit nach Mittwoch / Samstage sortiert werden kann
+    - add [win: 73.00] # um den Gewinn zu verfolgen (Gewinn mit / ohne SZ)
+    - add [pot: 2948591.55] # Pot Gesamt-Preis
+
+Ausgabe:
+-> Separation of Concerns
+    - Output sollte nur Output sein, evtl. mit Polymorphie, für Console / Mail je unterschiedlicher Aufruf
+    - D.h. auch Berechnung und Ergebnisse vom Output trennen.
+    Ideen:
+        - Evtl. Ohne Sz / Sz entfernen, wenn SZ bei daddy fix 7 ist
+        - Oder Ohne Sz / Sz drin lassen, aber das getroffene FETT
+
+Heroku Scheduler:
+-> Führe Skript Mi, Fr, Sa, Mo aus
+    - Mi für neueste Lottozahlen in Datenbank am Mittwoch
+    - Fr für Quoten vom Mittwoch
+    - Sa für neueste Lottozahlen in Datenbank am Samstag
+    - Mo für Quoten vom Samstag
 """
+
 dev_mode = False or int(os.environ.get('DEBUG')) # change debug state in heroku itself
 
 my_numbers = [  [3, 12, 17, 26, 30, 41],
@@ -22,6 +54,7 @@ my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [18, 19, 20, 25, 31, 38],
                 [4, 12, 17, 25, 33, 37],
                 [11, 17, 29, 33, 46, 49]]
+my_super_nr = 7
 """
 my_numbers = [  [4, 9, 17, 26, 30, 41],
                 [2, 3, 7, 10, 22, 27],
@@ -64,11 +97,20 @@ response = get(lotto_url)
 response.encoding = "utf-8"
 
 def get_date(s):
+    """
+    Ziehung vom Mittwoch, 01.01.2018... -> str("01.01.2018")
+    """
     reobj = re.search('[0-9]{2}.[0-9]{2}.[0-9]{4}',s)
     if reobj != None:
         return reobj.group(0)
     else:
         return None
+
+def get_day_str_from_date_str(s):
+    """
+    01.01.2018 -> 0-6 -> "Montag | Dienstag | Mittwoch | Donnerstag | Freitag | Samstag | Sonntag
+    """
+    pass
 
 def string_to_float(s):
     """
@@ -98,7 +140,6 @@ Winning Numbers
 """
 lotto_dict = {"numbers": []} # {"date": "21.11.2018", "numbers":[18, 24, 29, 30, 42, 47], "super_nr": 7}
 date = get_date(lotto_date_soup.text)
-print(lotto_date_soup.text)
 if date:
     lotto_dict["_id"] = datetime.datetime.strptime(date, "%d.%m.%Y")
     lotto_dict["date"] = date
@@ -200,8 +241,13 @@ print(get_plain_output_str())
 def get_html_output_str(): # BUG
     output_str = welcome_msg + "<br><br>"
     output_str += "<u>" + lotto_date_soup.text + "</u><br>" \
-    + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " + str(lotto_dict["super_nr"]) + "<br><br>" \
-    + "<u>Ergebnis mit ggf. <i>Gewinn (ohne, mit SZ)</i></u>: " + "<br>"
+    + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " 
+    if my_super_nr == lotto_dict["super_nr"]:
+        output_str += "<b>" + str(lotto_dict["super_nr"]) + "</b>"
+    else:
+        output_str += str(lotto_dict["super_nr"])
+    output_str += "<br><br>" \
+    + "<u>Ergebnis mit ggf. <i>Gewinn</i></u>: " + "<br>"
     win_without_sz = 0.0
     win_with_sz = 0.0
     for numbers in my_numbers: # BUG: Numbers changes even if my_numbers.copy() [[]<-- referenziert,[]]
@@ -218,11 +264,21 @@ def get_html_output_str(): # BUG
             win_without_sz += quote_tuple[0]
             win_with_sz += quote_tuple[1]
             output_str += " ---> " + str(hits) + " Treffer"
+            if my_super_nr == lotto_dict["super_nr"]:
+                output_str += " + SZ"
             if hits >= 2 and has_quote:
-                output_str += ": <i>{:.2f} €, {:.2f} €</i>".format(*quote_tuple)
+                output_str += ": <i>"
+                if my_super_nr == lotto_dict["super_nr"]:
+                    output_str += "{:.2f} €</i>".format(quote_tuple[1])
+                else:
+                    output_str += "{:.2f} €</i>".format(quote_tuple[0])
         output_str += "<br>"
     if has_quote:
-        output_str += "<br><u>Gesamtgewinn (ohne, mit SZ)</u>: <b>{:.2f} €</b>, <b>{:.2f} €</b><br>".format(win_without_sz, win_with_sz)
+        output_str += "<br><u>Gesamtgewinn</u>: <b>"
+        if my_super_nr == lotto_dict["super_nr"]:
+            output_str += "{:.2f} €</b><br>".format(win_with_sz)
+        else:
+            output_str += "{:.2f} €</b><br>".format(win_without_sz)
     else:
         output_str += "<br>noch keine Quote vorhanden.<br>"
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
