@@ -54,6 +54,7 @@ my_numbers = [  [3, 12, 17, 26, 30, 41],
                 [18, 19, 20, 25, 31, 38],
                 [4, 12, 17, 25, 33, 37],
                 [11, 17, 29, 33, 46, 49]]
+my_super_nr = 7
 """
 my_numbers = [  [4, 9, 17, 26, 30, 41],
                 [2, 3, 7, 10, 22, 27],
@@ -240,8 +241,13 @@ print(get_plain_output_str())
 def get_html_output_str(): # BUG
     output_str = welcome_msg + "<br><br>"
     output_str += "<u>" + lotto_date_soup.text + "</u><br>" \
-    + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " + str(lotto_dict["super_nr"]) + "<br><br>" \
-    + "<u>Ergebnis mit ggf. <i>Gewinn (ohne, mit SZ)</i></u>: " + "<br>"
+    + "Gewinnzahlen: " + "<b>" + str(lotto_dict["numbers"])[1:-1] + "</b>" + " SZ: " 
+    if my_super_nr == lotto_dict["super_nr"]:
+        output_str += "<b>" + str(lotto_dict["super_nr"]) + "</b>"
+    else:
+        output_str += str(lotto_dict["super_nr"])
+    output_str += "<br><br>" \
+    + "<u>Ergebnis mit ggf. <i>Gewinn</i></u>: " + "<br>"
     win_without_sz = 0.0
     win_with_sz = 0.0
     for numbers in my_numbers: # BUG: Numbers changes even if my_numbers.copy() [[]<-- referenziert,[]]
@@ -258,11 +264,21 @@ def get_html_output_str(): # BUG
             win_without_sz += quote_tuple[0]
             win_with_sz += quote_tuple[1]
             output_str += " ---> " + str(hits) + " Treffer"
+            if my_super_nr == lotto_dict["super_nr"]:
+                output_str += " + SZ"
             if hits >= 2 and has_quote:
-                output_str += ": <i>{:.2f} €, {:.2f} €</i>".format(*quote_tuple)
+                output_str += ": <i>"
+                if my_super_nr == lotto_dict["super_nr"]:
+                    output_str += "{:.2f} €</i>".format(quote_tuple[1])
+                else:
+                    output_str += "{:.2f} €</i>".format(quote_tuple[0])
         output_str += "<br>"
     if has_quote:
-        output_str += "<br><u>Gesamtgewinn (ohne, mit SZ)</u>: <b>{:.2f} €</b>, <b>{:.2f} €</b><br>".format(win_without_sz, win_with_sz)
+        output_str += "<br><u>Gesamtgewinn</u>: <b>"
+        if my_super_nr == lotto_dict["super_nr"]:
+            output_str += "{:.2f} €</b><br>".format(win_with_sz)
+        else:
+            output_str += "{:.2f} €</b><br>".format(win_without_sz)
     else:
         output_str += "<br>noch keine Quote vorhanden.<br>"
     output_str += "<i>" + no_warranty_msg + "</i><br><br>" + bye_msg + "<br>" + name_msg
@@ -285,8 +301,7 @@ def runOnSchedule():
 if dev_mode:
     to_mail_list = ["alexschott87@gmail.com"]
 else:
-    to_mail_list = ["alexschott87@gmail.com", 
-                    "scotty0655@gmail.com"]
+    to_mail_list = ["scotty0655@gmail.com"]
 
 def mailto(recipients):
     sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
