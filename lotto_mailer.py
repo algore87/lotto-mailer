@@ -315,7 +315,7 @@ def mailto(recipients):
         print(response.body)
         print(response.headers)
 
-if runOnSchedule() or dev_mode:
+if runOnSchedule() or dev_mode: # Deactivated since 14.01.2020 (no email will be sent anymore!)
     #print("Your API key is: {}".format(os.environ.get('SENDGRID_API_KEY')))
-    mailto(to_mail_list)
+    #mailto(to_mail_list) # uncomment to activate again
 
